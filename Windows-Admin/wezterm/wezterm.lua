@@ -1,5 +1,6 @@
 local wezterm = require 'wezterm'
 local act = wezterm.action
+local machines = require 'machines'
 local config = {}
 
 -- Use the config builder for better error handling
@@ -7,26 +8,32 @@ if wezterm.config_builder then
   config = wezterm.config_builder()
 end
 
+-- ─────────────────────────────
+-- 1. Detection Logic
+-- ─────────────────────────────
+local function is_on_campus()
+    local success, stdout, _ = wezterm.run_child_process({ 'ipconfig' })
+    return success and stdout:find("172.27.") ~= nil
+end
+local on_campus = is_on_campus()
+
 local function get_clemson_id()
     -- Checks if the user has set a custom CLEMSON_ID variable
-    -- Otherwise, falls back to the Windows %USERNAME%
-    return os.getenv('CLEMSON_ID') or os.getenv('USERNAME') or 'YOUR_ID_HERE'
-end
-
-local function is_on_campus()
-    local success, stdout, stderr = wezterm.run_child_process({ 'ipconfig' })
-    if success and stdout:find("172.27.") then
-        return true
-    end
-    return false
+    -- Otherwise, falls back to manual setting here
+    return os.getenv('CLEMSON_ID') or 'kgilbe3'
 end
 
 local cid = get_clemson_id()
-local on_campus = is_on_campus()
+-- Your local Windows name
+local win_user = os.getenv('USERNAME') 
 
+-- Use the Windows username for the PATH, but CID for the logic
+local ssh_config = on_campus 
+    and "C:/Users/" .. win_user .. "/.ssh/config-on-campus"
+    or  "C:/Users/" .. win_user .. "/.ssh/config-off-campus"
 
 -- ─────────────────────────────
--- Appearance
+-- 2. Appearance & Dynamic Theme
 -- ─────────────────────────────
 
 -- 1. Load the separate color file
@@ -127,29 +134,49 @@ config.skip_close_confirmation_for_processes_named = {
 config.launch_menu = {}
 
 -- Function to add a machine to the menu with smart routing
-local function add_ssh_entry(name)
-    local label = name:gsub("^%l", string.upper) -- Capitalize name (e.g., babbage1 --> Babbage1)
-    local full_host = name .. ".computing.clemson.edu"
-    local ssh_cmd = { 'ssh', cid .. '@' .. full_host }
+local function add_ssh_entry(name, ip)
+    local label = name:gsub("^%l", string.upper)
+    local cmd = {}
+    local target_host = "" -- Default (On-campus)
+    -- Status strings for clarity
+    local connection_type = on_campus and "Direct" or "via Access"
+    local icon = on_campus and "󰒍" or "󰖟"
     
-    if not on_campus then
-        -- Off-campus uses the -J flag
-        ssh_cmd = { 'ssh', '-J', cid .. '@access.computing.clemson.edu', cid .. '@' .. full_host }
+    -- -F FLAG forces SSH to use custom config files
+    -- Also explicitly add cid@ to ensure it doesn't use your Windows name
+    if on_campus then
+        -- Direct: Use the full public domain
+        target_host = name .. ".computing.clemson.edu"
+        cmd = { 'ssh', '-F', ssh_config, cid .. '@' .. target_host }
+    else
+        -- Off campus: use the jump- prefix, your off-campus config
+        cmd = { 
+            'ssh', '-F', ssh_config, 
+            '-J', cid .. '@access.computing.clemson.edu', 
+            cid .. '@' .. ip 
+        }
     end
 
     table.insert(config.launch_menu, {
-        label = label .. (on_campus and " (Direct)" or " (via Access)"),
-        -- Using 'cmd.exe /K' keeps the window open so you can read the error if SSH fails
-        args = { 'cmd.exe', '/K', table.concat(ssh_cmd, ' ') }
+        --label = label .. (on_campus and " (Direct)" or " (via Access)"),
+        label = string.format("%s (%s) %s", label, connection_type, icon),
+        args = cmd
     })
 end
 
+-- ONLY add machines that have enabled = true
+for _, m in ipairs(machines) do
+  if m.enabled then
+      add_ssh_entry(m.name, m.ip)
+  end
+end
+
 -- Add your machines here
-add_ssh_entry("babbage1")
-add_ssh_entry("babbage2")
-add_ssh_entry("babbage3")
-add_ssh_entry("newton")
-add_ssh_entry("titan1")
+-- add_ssh_entry("babbage1")
+-- add_ssh_entry("babbage2")
+-- add_ssh_entry("babbage3")
+-- add_ssh_entry("newton")
+-- add_ssh_entry("titan1")
 -- etc.
 
 -- ─────────────────────────────
