@@ -1,15 +1,14 @@
-# Universal identity
+# --- Identity Section ---
 Host *
-    User <YourID>
+    User YourID
     IdentityFile ~/.ssh/id_ed25519
 
-# The Gateway
+# --- The Gateway ---
 Host access
     HostName access.computing.clemson.edu
 
-# The Lab Machines
+# This now only acts as a pattern matcher for settings, 
+# NOT for rewriting the hostname.
 Host babbage* newton titan*
-    # Try to connect directly for 2 seconds
-    ConnectTimeout 2
-    # If direct fails, use access as a jump point
-    ProxyJump access
+    # Leave HostName out of here so Lua can handle it
+    ConnectTimeout 5
