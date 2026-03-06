@@ -44,6 +44,7 @@ config.colors.split = palette.highlight_med
 -- ─────────────────────────────
 -- 3. Dynamic Tab Titles (Universal Fix)
 -- ─────────────────────────────
+-- TODO: after launcher and machine selection, OG tab becomes "1: powershell.exe" for some reason???
 wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_width)
     local title = tab.active_pane.title
     local id = tab.tab_index + 1
@@ -76,7 +77,7 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_wid
 end)
 
 -- ─────────────────────────────
--- Clemson Status Bar
+-- 4. Clemson Status Bar
 -- ─────────────────────────────
 -- shows Clemson username & current date in the corner of the tab bar
 wezterm.on('update-right-status', function(window, pane)
@@ -92,162 +93,75 @@ wezterm.on('update-right-status', function(window, pane)
     }))
 end)
 
--- where to look for font files, ABSOLUTE path
-config.font_dirs = { 'C:/Users/missk/Programs/WezTerm/fonts' }
-
-config.font = wezterm.font_with_fallback({
-  { family = 'JetBrainsMono Nerd Font', weight = 'Regular' },
-  'Consolas', -- Fallback if the above fails
-})
-
-config.font_size = 12.0
-config.window_background_opacity = 1.0
-config.scrollback_lines = 10000
-
--- Tab Bar Configuration (for SoC username and datetime)
-config.use_fancy_tab_bar = true
-config.hide_tab_bar_if_only_one_tab = false -- Set to false so you can always see where you are
-config.show_tab_index_in_tab_bar = true
-config.switch_to_last_active_tab_when_closing_tab = true
-
--- Ensure this is set so the bar actually updates
-config.status_update_interval = 1000
-config.tab_max_width = 64
-
--- This function cleans up the title so it's not a giant messy path
-wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_width)
-  local title = tab.active_pane.title
-  local id = tab.tab_index + 1
-
-  -- TODO: NEED TO UPDATE THIS SO IT'S NOT RELIANT ON MY CONFIGS BUT UNIVERSAL. DONE MANUALLY FOR NOW BUT IT'S CLUNKY
-  -- If it's just 'ssh.exe', let's hunt for the Clemson name in the pane metadata
-  if title == 'ssh.exe' or title == 'ssh' or title:find('powershell') then
-    -- Check the foreground process arguments (this usually contains 'ssh babbage1')
-    local process = tab.active_pane.get_foreground_process_info()
-    if process and process.argv then
-      for _, arg in ipairs(process.argv) do
-        if arg:find('babbage') then title = arg:gsub('%.computing%.clemson%.edu', '')
-        elseif arg:find('newton') then title = 'Newton'
-        elseif arg:find('titan') then title = arg:gsub('%.computing%.clemson%.edu', '')
-        elseif arg:find('ada') then title = arg:gsub('%.computing%.clemson%.edu', '')
-        elseif arg:find('cerf') then title = arg:gsub('%.computing%.clemson%.edu', '')
-        elseif arg:find('joey') then title = arg:gsub('%.computing%.clemson%.edu', '')
-        elseif arg:find('cirrus') then title = arg:gsub('%.computing%.clemson%.edu', '')
-        end
-      end
-    end
-  end
-
-  -- Fallbacks (often the remote prompt will update the title eventually)
-  if title == 'ssh.exe' then
-    title = 'Clemson'
-  elseif title == 'powershell.exe' then
-    title = 'PowerShell'
-  elseif title == 'cmd.exe' then
-    title = 'Command Prompt'
-  end
-
-  return {
-    { Text = ' ' .. id .. ' │ ' .. title .. ' ' },
-  }
-end)
-
--- Highlighting Configs
--- config.selection_word_boundary = " @-./_~" -- Makes double-clicking paths easier
-config.skip_close_confirmation_for_processes_named = {
-  'bash', 'sh', 'zsh', 'powershell', 'cmd', 'ssh',
-}
-
 -- ─────────────────────────────
--- Launch Menu & SSH
+-- 5. Launch Menu Construction
 -- ─────────────────────────────
 config.launch_menu = {}
 
 -- Function to add a machine to the menu with smart routing
 local function add_ssh_entry(name, ip)
-    local label = name:gsub("^%l", string.upper)
     local cmd = {}
-    local target_host = "" -- Default (On-campus)
-    -- Status strings for clarity
-    local connection_type = on_campus and "Direct" or "via Access"
+    local label_name = (name:gsub("^%l", string.upper))
     local icon = on_campus and "󰒍" or "󰖟"
-    
-    -- -F FLAG forces SSH to use custom config files
-    -- Also explicitly add cid@ to ensure it doesn't use your Windows name
+    local suffix = on_campus and "(Direct)" or "(via Access)"
+
     if on_campus then
-        -- Direct: Use the full public domain
-        target_host = name .. ".computing.clemson.edu"
-        cmd = { 'ssh', '-F', ssh_config, cid .. '@' .. target_host }
+        -- On campus (Direct): Use the full public domain
+        cmd = { 'ssh', '-F', ssh_config, cid .. '@' .. name .. '.computing.clemson.edu' }
     else
         -- Off campus: use the jump- prefix, your off-campus config
-        cmd = { 
-            'ssh', '-F', ssh_config, 
-            '-J', cid .. '@access.computing.clemson.edu', 
-            cid .. '@' .. ip 
-        }
+        cmd = { 'ssh', '-F', ssh_config, '-J', cid .. '@access.computing.clemson.edu', cid .. '@' .. ip }
     end
 
+    -- Listing format for machines in launcher
     table.insert(config.launch_menu, {
-        --label = label .. (on_campus and " (Direct)" or " (via Access)"),
-        label = string.format("%s (%s) %s", label, connection_type, icon),
+        label = string.format("%s %s %s", label_name, suffix, icon),
         args = cmd
     })
 end
 
 -- ONLY add machines that have enabled = true
 for _, m in ipairs(machines) do
-  if m.enabled then
-      add_ssh_entry(m.name, m.ip)
-  end
+    if m.enabled then add_ssh_entry(m.name, m.ip) end
 end
 
+-- ─────────────────────────────
+-- 6. Core System Settings
+-- ─────────────────────────────
+config.font_dirs = { font_path }
+config.font = wezterm.font_with_fallback({
+    { family = 'JetBrainsMono Nerd Font', weight = 'Regular' },
+    'Consolas',
+})
+config.font_size = 12.0
+config.window_background_opacity = 1.0
+config.scrollback_lines = 10000
+config.use_fancy_tab_bar = true
+config.status_update_interval = 1000
+config.default_prog = { 'powershell.exe', '-NoLogo' }
+config.skip_close_confirmation_for_processes_named = { 'bash', 'sh', 'zsh', 'powershell', 'cmd', 'ssh' }
 
 -- ─────────────────────────────
--- Keybindings
+-- 7. Keybindings
 -- ─────────────────────────────
 -- NOTE: split panes only functions correctly on campus as of last test
 config.keys = {
   -- Wezterm Launcher
-  {
-    key = 'l',
-    mods = 'ALT',
-    -- This flag ensures ONLY your launch_menu items appear
-    action = act.ShowLauncherArgs { 
-      flags = 'LAUNCH_MENU_ITEMS', 
-      title = 'Clemson Lab Quick-Connect' 
-    },
-  },
-  -- Clipboard things!
+  { key = 'l', mods = 'ALT', action = act.ShowLauncherArgs { flags = 'LAUNCH_MENU_ITEMS', title = 'Clemson Lab Connect' } },
+  -- Clipboard Things!!!
   { key = 'v', mods = 'CTRL', action = act.PasteFrom 'Clipboard' },
   { key = 'c', mods = 'CTRL', action = act.CopyTo 'Clipboard' },
   -- Split vertical (Ctrl+Shift+Enter)
-  {
-    key = 'Return',
-    mods = 'CTRL|SHIFT',
-    action = wezterm.action_callback(function(window, pane)
-      local process = pane:get_foreground_process_info()
-      if process and process.argv then
-        -- This spawns a new pane with the EXACT same command (ssh babbage1, etc.)
-        pane:split { args = process.argv }
-      else
-        pane:split {}
-      end
-    end),
-  },
+  { key = 'Return', mods = 'CTRL|SHIFT', action = wezterm.action_callback(function(win, pane) 
+        local p = pane:get_foreground_process_info()
+        pane:split { args = p and p.argv or nil } 
+  end)},
   -- Split horizontal (Alt+Shift+Enter)
-  {
-    key = 'Return',
-    mods = 'ALT|SHIFT',
-    action = wezterm.action_callback(function(window, pane)
-      local process = pane:get_foreground_process_info()
-      if process and process.argv then
-        pane:split { direction = 'Bottom', args = process.argv }
-      else
-        pane:split { direction = 'Bottom' }
-      end
-    end),
-  },
-  -- Move between panes using Alt + Arrow Keys
+  { key = 'Return', mods = 'ALT|SHIFT', action = wezterm.action_callback(function(win, pane) 
+        local p = pane:get_foreground_process_info()
+        pane:split { direction = 'Bottom', args = p and p.argv or nil } 
+  end)},
+  -- Navigation: Move between panes using Alt + Arrow Keys
   { key = 'LeftArrow', mods = 'ALT', action = act.ActivatePaneDirection 'Left' },
   { key = 'RightArrow', mods = 'ALT', action = act.ActivatePaneDirection 'Right' },
   { key = 'UpArrow', mods = 'ALT', action = act.ActivatePaneDirection 'Up' },
@@ -255,31 +169,7 @@ config.keys = {
 }
 
 -- ─────────────────────────────
--- Startup Behavior
--- ─────────────────────────────
--- This spawns the window and immediately triggers the menu
-wezterm.on('gui-startup', function(cmd)
-  local _, pane, window = wezterm.mux.spawn_window(cmd or {})
-  window:gui_window():perform_action(
-    act.ShowLauncherArgs {
-      -- Adding '|FUZZY' would make it like a searchable search bar
-      flags = 'LAUNCH_MENU_ITEMS',
-      title = 'Select Clemson Lab Machine',
-    },
-    pane
-  )
-end)
-
--- ─────────────────────────────
--- Default shell (Windows)
--- ─────────────────────────────
--- 'cmd.exe' is the "old reliable", but 'powershell.exe' is usually better 
--- for rendering Nerd Font symbols.
-config.default_prog = { 'powershell.exe', '-NoLogo' }
-
-
--- ─────────────────────────────
--- Selection & Mouse Bindings
+-- 8. Selection & Mouse Bindings
 -- ─────────────────────────────
 -- Disable the remote host from taking over the mouse for selections
 config.selection_word_boundary = " \t\n{}[]()\"'`:;,"
@@ -316,5 +206,21 @@ config.mouse_bindings = {
     action = act.PasteFrom 'Clipboard',
   },
 }
+
+-- ─────────────────────────────
+-- 9. Startup Behavior
+-- ─────────────────────────────
+-- This spawns the window and immediately triggers the menu
+wezterm.on('gui-startup', function(cmd)
+  local _, pane, window = wezterm.mux.spawn_window(cmd or {})
+  window:gui_window():perform_action(
+    act.ShowLauncherArgs {
+      -- Adding '|FUZZY' would make it like a searchable search bar
+      flags = 'LAUNCH_MENU_ITEMS',
+      title = 'Select Clemson Lab Machine',
+    },
+    pane
+  )
+end)
 
 return config
