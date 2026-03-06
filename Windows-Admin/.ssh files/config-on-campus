@@ -1,5 +1,5 @@
 # --- Identity Section ---
 Host *
-    User kgilbe3
+    User CLEMSON_ID
     IdentityFile ~/.ssh/id_ed25519
     ConnectTimeout 5

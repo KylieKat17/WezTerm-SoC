@@ -1,6 +1,6 @@
 # --- Global Identity ---
 Host *
-    User kgilbe3
+    User CLEMSON_ID
     IdentityFile ~/.ssh/id_ed25519
     # Keep the connection alive if you're idle
     ServerAliveInterval 60
@@ -8,11 +8,11 @@ Host *
 # --- The Gateway ---
 Host access.computing.clemson.edu access
     HostName access.computing.clemson.edu
-    User kgilbe3
+    User CLEMSON_ID
 
 # --- Internal Nodes ---
 # This block handles any Clemson IP directly
 Host 130.127.*
-    User kgilbe3
+    User CLEMSON_ID
     # This ensures it uses the same key for the second hop
     IdentityFile ~/.ssh/id_ed25519
