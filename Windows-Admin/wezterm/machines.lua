@@ -1,7 +1,10 @@
 -- machines.lua
 -- Verified active Clemson SoC machines as of March 2026
 -- Groups categorized by Lab location and Hardware type
--- IMPORTANT: add `enabled = true` at the end of any server/machine in order to avoid having a giant list of all options on your launcher. Just choose what you would prefer. And remove it from the ones used for testing purposes!
+-- IMPORTANT : add `enabled = true` at the end of any server/machine
+--             in order to avoid having a giant list of all options
+--             on your launcher. Just choose what you would prefer.
+--             And remove it from the ones used for testing purposes!
 
 return {
     -- ADA CLUSTER (McAdams 110A - Ubuntu 24)
