@@ -40,7 +40,7 @@ local ssh_config = on_campus
 local rp = require 'colors/rose-pine'
 
 -- 2. Pick your flavor: 'main', 'moon', or 'dawn'
-local theme = rp.dawn 
+local theme = rp.moon 
 -- Call the function ONCE here to get the table of hex codes
 local palette = theme.palette() -- New: gets the table of raw colors
 
@@ -64,9 +64,9 @@ wezterm.on('update-right-status', function(window, pane)
   window:set_right_status(wezterm.format({
     { Background = { Color = palette.surface } }, -- maybe modify rose-pine.lua to deal with wanting this lighter than the body
     { Foreground = { Color = palette.gold } },
-    { Text = '  󰒍  ' },
+    { Text = '     ' },
     { Foreground = { Color = palette.text } },
-    { Text = 'kgilbe3  |  ' .. date .. '  ' },
+    { Text = cid .. '  |  ' .. date .. '  ' },
   }))
 end)
 
@@ -97,24 +97,32 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_wid
   local title = tab.active_pane.title
   local id = tab.tab_index + 1
 
+  -- TODO: NEED TO UPDATE THIS SO IT'S NOT RELIANT ON MY CONFIGS BUT UNIVERSAL. DONE MANUALLY FOR NOW BUT IT'S CLUNKY
   -- If it's just 'ssh.exe', let's hunt for the Clemson name in the pane metadata
   if title == 'ssh.exe' or title == 'ssh' or title:find('powershell') then
     -- Check the foreground process arguments (this usually contains 'ssh babbage1')
     local process = tab.active_pane.get_foreground_process_info()
     if process and process.argv then
       for _, arg in ipairs(process.argv) do
-        if arg:find('babbage2') then title = arg:gsub('%.computing%.clemson%.edu', '')
+        if arg:find('babbage') then title = arg:gsub('%.computing%.clemson%.edu', '')
         elseif arg:find('newton') then title = 'Newton'
         elseif arg:find('titan') then title = arg:gsub('%.computing%.clemson%.edu', '')
+        elseif arg:find('ada') then title = arg:gsub('%.computing%.clemson%.edu', '')
+        elseif arg:find('cerf') then title = arg:gsub('%.computing%.clemson%.edu', '')
+        elseif arg:find('joey') then title = arg:gsub('%.computing%.clemson%.edu', '')
+        elseif arg:find('cirrus') then title = arg:gsub('%.computing%.clemson%.edu', '')
         end
       end
     end
   end
 
-  -- Fallback: If we still have 'ssh.exe', just use the last word of the title 
-  -- (often the remote prompt will update the title eventually)
+  -- Fallbacks (often the remote prompt will update the title eventually)
   if title == 'ssh.exe' then
     title = 'Clemson'
+  elseif title == 'powershell.exe' then
+    title = 'PowerShell'
+  elseif title == 'cmd.exe' then
+    title = 'Command Prompt'
   end
 
   return {
@@ -171,17 +179,11 @@ for _, m in ipairs(machines) do
   end
 end
 
--- Add your machines here
--- add_ssh_entry("babbage1")
--- add_ssh_entry("babbage2")
--- add_ssh_entry("babbage3")
--- add_ssh_entry("newton")
--- add_ssh_entry("titan1")
--- etc.
 
 -- ─────────────────────────────
 -- Keybindings
 -- ─────────────────────────────
+-- NOTE: split panes only functions correctly on campus as of last test
 config.keys = {
   -- Wezterm Launcher
   {
