@@ -1,0 +1,15 @@
+# Universal identity
+Host *
+    User <YourID>
+    IdentityFile ~/.ssh/id_ed25519
+
+# The Gateway
+Host access
+    HostName access.computing.clemson.edu
+
+# The Lab Machines
+Host babbage* newton titan*
+    # Try to connect directly for 2 seconds
+    ConnectTimeout 2
+    # If direct fails, use access as a jump point
+    ProxyJump access
