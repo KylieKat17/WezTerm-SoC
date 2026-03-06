@@ -7,6 +7,24 @@ if wezterm.config_builder then
   config = wezterm.config_builder()
 end
 
+local function get_clemson_id()
+    -- Checks if the user has set a custom CLEMSON_ID variable
+    -- Otherwise, falls back to the Windows %USERNAME%
+    return os.getenv('CLEMSON_ID') or os.getenv('USERNAME') or 'YOUR_ID_HERE'
+end
+
+local function is_on_campus()
+    local success, stdout, stderr = wezterm.run_child_process({ 'ipconfig' })
+    if success and stdout:find("172.27.") then
+        return true
+    end
+    return false
+end
+
+local cid = get_clemson_id()
+local on_campus = is_on_campus()
+
+
 -- ─────────────────────────────
 -- Appearance
 -- ─────────────────────────────
@@ -15,7 +33,7 @@ end
 local rp = require 'colors/rose-pine'
 
 -- 2. Pick your flavor: 'main', 'moon', or 'dawn'
-local theme = rp.moon 
+local theme = rp.dawn 
 -- Call the function ONCE here to get the table of hex codes
 local palette = theme.palette() -- New: gets the table of raw colors
 
@@ -46,8 +64,7 @@ wezterm.on('update-right-status', function(window, pane)
 end)
 
 -- where to look for font files, ABSOLUTE path
--- SWAP <yourUser> for your system username
-config.font_dirs = { 'C:/Users/yourUser/Programs/WezTerm/fonts' }
+config.font_dirs = { 'C:/Users/missk/Programs/WezTerm/fonts' }
 
 config.font = wezterm.font_with_fallback({
   { family = 'JetBrainsMono Nerd Font', weight = 'Regular' },
@@ -98,7 +115,8 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_wid
   }
 end)
 
--- Closing Skip Configs
+-- Highlighting Configs
+-- config.selection_word_boundary = " @-./_~" -- Makes double-clicking paths easier
 config.skip_close_confirmation_for_processes_named = {
   'bash', 'sh', 'zsh', 'powershell', 'cmd', 'ssh',
 }
@@ -106,13 +124,33 @@ config.skip_close_confirmation_for_processes_named = {
 -- ─────────────────────────────
 -- Launch Menu & SSH
 -- ─────────────────────────────
-config.launch_menu = {
-  { label = 'Babbage 1',                     args = { 'ssh', 'babbage1' } },
-  { label = 'Babbage 2',                     args = { 'ssh', 'babbage2' } },
-  { label = 'Babbage 3',                     args = { 'ssh', 'babbage3' } },
-  { label = 'Newton',                        args = { 'ssh', 'newton' } },
-  { label = 'Titan 1 - Linux Legacy',        args = { 'ssh', 'titan1' } },  
-}
+config.launch_menu = {}
+
+-- Function to add a machine to the menu with smart routing
+local function add_ssh_entry(name)
+    local label = name:gsub("^%l", string.upper) -- Capitalize name (e.g., babbage1 --> Babbage1)
+    local full_host = name .. ".computing.clemson.edu"
+    local ssh_cmd = { 'ssh', cid .. '@' .. full_host }
+    
+    if not on_campus then
+        -- Off-campus uses the -J flag
+        ssh_cmd = { 'ssh', '-J', cid .. '@access.computing.clemson.edu', cid .. '@' .. full_host }
+    end
+
+    table.insert(config.launch_menu, {
+        label = label .. (on_campus and " (Direct)" or " (via Access)"),
+        -- Using 'cmd.exe /K' keeps the window open so you can read the error if SSH fails
+        args = { 'cmd.exe', '/K', table.concat(ssh_cmd, ' ') }
+    })
+end
+
+-- Add your machines here
+add_ssh_entry("babbage1")
+add_ssh_entry("babbage2")
+add_ssh_entry("babbage3")
+add_ssh_entry("newton")
+add_ssh_entry("titan1")
+-- etc.
 
 -- ─────────────────────────────
 -- Keybindings
@@ -185,9 +223,9 @@ end)
 -- Default shell (Windows)
 -- ─────────────────────────────
 -- 'cmd.exe' is the "old reliable", but 'powershell.exe' is usually better 
--- for rendering Nerd Font symbols. If you want to swap to cmd.exe, uncomment the other line
+-- for rendering Nerd Font symbols.
 config.default_prog = { 'powershell.exe', '-NoLogo' }
--- config.default_prog = { 'cmd.exe', '-NoLogo' }
+
 
 -- ─────────────────────────────
 -- Selection & Mouse Bindings
@@ -228,6 +266,4 @@ config.mouse_bindings = {
   },
 }
 
-
 return config
-
