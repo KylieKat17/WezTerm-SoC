@@ -1,4 +1,4 @@
-# 🚀 Clemson SoC WezTerm Setup Guide
+# 🚀 Clemson SoC WezTerm Setup Guide for Windows
 
 This setup gives you a one-click connection to lab machines (Babbage, Newton, etc.) with automatic off-campus proxying and a custom **Rosé Pine** theme based on the officially supported WezTerm one but updated for 2026!
 
@@ -28,7 +28,7 @@ To make "Jump Hosting" through the Clemson gateway work automatically:
 
 1. Go to `C:\Users\<YourUser>\.ssh\` (create it if missing).
 2. Open or create a file named `config` (make sure there is **NO** `.txt` extension).
-3. Paste the following (replacing `<YourID>` with your Clemson username):
+3. Paste the following (replacing `<YourID>` with your Clemson username) or alternatively, I included the file for you to drag and drop:
 
 ```Plaintext
 # Universal identity
