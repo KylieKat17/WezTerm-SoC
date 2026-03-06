@@ -1,15 +1,19 @@
 local wezterm = require 'wezterm'
 local act = wezterm.action
 local machines = require 'machines'
-local config = {}
-
--- Use the config builder for better error handling
-if wezterm.config_builder then
-  config = wezterm.config_builder()
-end
+local config = wezterm.config_builder() -- if needed, add back if loop
 
 -- ─────────────────────────────
--- 1. Detection Logic
+-- 0. User Configuration (Edit these)
+-- MAKE SURE YOU SET-UP YOUR ENV VARIABLES!!!!!!!
+-- ─────────────────────────────
+local cid = os.getenv('CLEMSON_ID') or 'kgilbe3'
+local win_user = os.getenv('USERNAME') or 'User'
+-- Path to your local font folder (relative or absolute)
+local font_path = 'C:/Users/' .. win_user .. '/Programs/WezTerm/fonts'
+
+-- ─────────────────────────────
+-- 1. Network Detection & SSH Logic
 -- ─────────────────────────────
 local function is_on_campus()
     local success, stdout, _ = wezterm.run_child_process({ 'ipconfig' })
@@ -17,41 +21,59 @@ local function is_on_campus()
 end
 local on_campus = is_on_campus()
 
-local function get_clemson_id()
-    -- Checks if the user has set a custom CLEMSON_ID variable
-    -- Otherwise, falls back to manual setting here
-    return os.getenv('CLEMSON_ID') or 'kgilbe3'
-end
-
-local cid = get_clemson_id()
--- Your local Windows name
-local win_user = os.getenv('USERNAME') 
-
 -- Use the Windows username for the PATH, but CID for the logic
-local ssh_config = on_campus 
-    and "C:/Users/" .. win_user .. "/.ssh/config-on-campus"
-    or  "C:/Users/" .. win_user .. "/.ssh/config-off-campus"
+local ssh_config = string.format("C:/Users/%s/.ssh/config-%s", 
+      win_user, (on_campus and "on-campus" or "off-campus"))
 
 -- ─────────────────────────────
 -- 2. Appearance & Dynamic Theme
 -- ─────────────────────────────
-
--- 1. Load the separate color file
 local rp = require 'colors/rose-pine'
+-- Pick your flavor: 'main', 'moon', or 'dawn'
+local theme = rp.moon
+local palette = theme.palette() -- gets the table of raw colors by hex codes
 
--- 2. Pick your flavor: 'main', 'moon', or 'dawn'
-local theme = rp.moon 
--- Call the function ONCE here to get the table of hex codes
-local palette = theme.palette() -- New: gets the table of raw colors
-
--- 3. Apply the colors to the global config
+-- Apply the colors to the global config
 config.colors = theme.colors()
 config.window_frame = theme.window_frame()
+-- Use palette variables instead of hardcoded hex to keep things dynamic. Can hardcode if you prefer, but I suggest doing it in the rose-pine.lua file
+config.colors.selection_bg = palette.selection_bg
+config.colors.selection_fg = palette.selection_fg
+config.colors.split = palette.highlight_med
 
--- Use palette variables instead of hardcoded hex to keep things dynamic
-config.colors.selection_bg = palette.selection_bg --or'#403d52'
-config.colors.selection_fg = palette.selection_fg --or '#e0def4'
-config.colors.split = palette.highlight_med --or '#403d52'
+-- ─────────────────────────────
+-- 3. Dynamic Tab Titles (Universal Fix)
+-- ─────────────────────────────
+wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_width)
+    local title = tab.active_pane.title
+    local id = tab.tab_index + 1
+
+    -- If title is generic (ssh/powershell), look at the process arguments
+    if title:find('ssh') or title:find('powershell') or title:find('cmd') then
+        local process = tab.active_pane.get_foreground_process_info()
+        if process and process.argv then
+            for _, arg in ipairs(process.argv) do
+                -- Pattern: Match any name followed by the clemson domain or common lab prefixes
+                local match = arg:match("([^@]+)%.computing%.clemson%.edu") 
+                           or arg:match("jump%-(%w+)")
+                if match then
+                    title = match:upper()
+                    break
+                end
+            end
+        end
+    end
+
+    -- Final cleanups for common shells
+    local clean_titles = { 
+        ['ssh.exe'] = 'Clemson', 
+        ['powershell.exe'] = 'PowerShell', 
+        ['cmd.exe'] = 'Command Prompt' 
+    }
+    title = clean_titles[title] or title
+
+    return { { Text = string.format(" %d │ %s ", id, title) } }
+end)
 
 -- ─────────────────────────────
 -- Clemson Status Bar
@@ -59,15 +81,15 @@ config.colors.split = palette.highlight_med --or '#403d52'
 -- shows Clemson username & current date in the corner of the tab bar
 wezterm.on('update-right-status', function(window, pane)
   local date = wezterm.strftime('%a %b %d %I:%M %p')
-
-  -- Use the active theme's colors so it adapts automatically
-  window:set_right_status(wezterm.format({
-    { Background = { Color = palette.surface } }, -- maybe modify rose-pine.lua to deal with wanting this lighter than the body
-    { Foreground = { Color = palette.gold } },
-    { Text = '     ' },
-    { Foreground = { Color = palette.text } },
-    { Text = cid .. '  |  ' .. date .. '  ' },
-  }))
+  local network_icon = on_campus and " 󰒍  (Direct)" or " 󰖟 (Access)"
+    
+    window:set_right_status(wezterm.format({
+        { Background = { Color = palette.surface } },
+        { Foreground = { Color = palette.gold } },
+        { Text = '     ' }, 
+        { Foreground = { Color = palette.text } },
+        { Text = string.format("%s  | %s  |  %s  ", cid, network_icon, date) },
+    }))
 end)
 
 -- where to look for font files, ABSOLUTE path
