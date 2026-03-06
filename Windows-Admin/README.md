@@ -19,6 +19,7 @@ This setup gives you a one-click connection to lab machines (Babbage, Newton, et
 Move the provided files into your user profile directory as follows:
 
 * **Main Config:** `C:\Users\<YourUser>\.config\wezterm\wezterm.lua`
+* **SoC Addresses:** `C:\Users\<YourUser>\.config\wezterm\machines.lua`
 * **Theme File:** `C:\Users\<YourUser>\.config\wezterm\colors\rose-pine-wip.lua`
 
 > Note: If the folders don't exist, create them exactly as named above.
@@ -27,26 +28,8 @@ Move the provided files into your user profile directory as follows:
 To make "Jump Hosting" through the Clemson gateway work automatically:
 
 1. Go to `C:\Users\<YourUser>\.ssh\` (create it if missing).
-2. Open or create a file named `config` (make sure there is **NO** `.txt` extension).
-3. Paste the following (replacing `<YourID>` with your Clemson username) or alternatively, I included the file for you to drag and drop:
-
-```Plaintext
-# Universal identity
-Host *
-    User YourID
-    IdentityFile ~/.ssh/id_ed25519
-
-# The Gateway
-Host access
-    HostName access.computing.clemson.edu
-
-# The Lab Machines
-Host babbage* newton titan*
-    # Try to connect directly for 2 seconds
-    ConnectTimeout 2
-    # If direct fails, use access as a jump point
-    ProxyJump access
-```
+2. Take the files `config-on-campus` and `config-off-campus` in this repo and place them in that folder.
+3. Open `machines.lua` and add `enabled = true` to your preferred machines. Remove that snippet from the defaults I set-up.
 
 ### 4. Enable Passwordless Login (Optional but Recommended)
 To avoid typing your password twice every time you connect:
@@ -65,5 +48,3 @@ Log into `access.computing.clemson.edu` and paste that string into a new line in
 * **Alt + Shift + Enter**: Split screen horizontally.
 * **Alt + Arrow Keys**: Move your cursor between split panes.
 * **Ctrl + D**: Closes the open pane
-
-> Note: Those commands only work while directly on campus wifi at the moment. I'm going to trouble shoot it
