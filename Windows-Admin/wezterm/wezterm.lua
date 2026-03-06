@@ -15,7 +15,7 @@ end
 local rp = require 'colors/rose-pine'
 
 -- 2. Pick your flavor: 'main', 'moon', or 'dawn'
-local theme = rp.dawn 
+local theme = rp.moon 
 -- Call the function ONCE here to get the table of hex codes
 local palette = theme.palette() -- New: gets the table of raw colors
 
@@ -230,3 +230,4 @@ config.mouse_bindings = {
 
 
 return config
+
