@@ -46,7 +46,8 @@ wezterm.on('update-right-status', function(window, pane)
 end)
 
 -- where to look for font files, ABSOLUTE path
-config.font_dirs = { 'C:/Users/missk/Programs/WezTerm/fonts' }
+-- SWAP <yourUser> for your system username
+config.font_dirs = { 'C:/Users/yourUser/Programs/WezTerm/fonts' }
 
 config.font = wezterm.font_with_fallback({
   { family = 'JetBrainsMono Nerd Font', weight = 'Regular' },
@@ -97,8 +98,7 @@ wezterm.on('format-tab-title', function(tab, tabs, panes, config, hover, max_wid
   }
 end)
 
--- Highlighting Configs
--- config.selection_word_boundary = " @-./_~" -- Makes double-clicking paths easier
+-- Closing Skip Configs
 config.skip_close_confirmation_for_processes_named = {
   'bash', 'sh', 'zsh', 'powershell', 'cmd', 'ssh',
 }
@@ -185,9 +185,9 @@ end)
 -- Default shell (Windows)
 -- ─────────────────────────────
 -- 'cmd.exe' is the "old reliable", but 'powershell.exe' is usually better 
--- for rendering Nerd Font symbols.
+-- for rendering Nerd Font symbols. If you want to swap to cmd.exe, uncomment the other line
 config.default_prog = { 'powershell.exe', '-NoLogo' }
-
+-- config.default_prog = { 'cmd.exe', '-NoLogo' }
 
 -- ─────────────────────────────
 -- Selection & Mouse Bindings
@@ -227,5 +227,6 @@ config.mouse_bindings = {
     action = act.PasteFrom 'Clipboard',
   },
 }
+
 
 return config
