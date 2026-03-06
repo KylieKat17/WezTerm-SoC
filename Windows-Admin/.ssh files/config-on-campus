@@ -1,0 +1,5 @@
+# --- Identity Section ---
+Host *
+    User kgilbe3
+    IdentityFile ~/.ssh/id_ed25519
+    ConnectTimeout 5
