@@ -36,8 +36,8 @@ If you prefer clicking through menus:
 2. Select "Edit environment variables for your account" (should be the second option. Not the "best match").
 3. Under the top box (User variables), click **New...**.
 4. You should get a pop-up (New User Variable). Enter the following values:
-- Variable name: CLEMSON_ID
-- Variable value: Your Clemson Username
+    * Variable name: CLEMSON_ID
+    * Variable value: Your Clemson Username
 5. Click OK on all windows.
 
 ### How to verify it worked
