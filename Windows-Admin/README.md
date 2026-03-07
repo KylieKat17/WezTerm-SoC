@@ -74,7 +74,7 @@ To avoid typing your password twice every time you connect (whether on **or** of
 
 This is **normal**. It means you're accessing directly via the IP address. You will see a similar screen when accessing a machine on campus for the first time. It's setting adding to the necessary files located in `~/.ssh/` on your computer *and* `~/.ssh/authorized_keys` on the SoC machine(s). Please see the Common Errors section for trouble shooting!
 
-* *NOTE: Off-campus access was tested on a iPhone Hotspot, which works perfectly! Am working on getting regular off campus WiFi Connection to work without having to input anything though! It does work, you just have to put in your access password at the moment! And, it also works via Cisco VPN, it will just register you as using Access instead of Direct connect at the minute! No clue why it's not registering as being on a school IP, but will figure it out!*
+* *NOTE: Off-campus access was tested on a iPhone Hotspot, which works perfectly! At last test, regular off campus works perfectly! And, it also works via Cisco VPN, it will just register you as using Access instead of Direct connect at the minute! No clue why it's not registering as being on a school IP, but will figure it out!*
 
 ---
 
