@@ -57,5 +57,19 @@ Before installing any version, ensure you have the required fonts installed at t
 
 ---
 
+## 📂 Passwordless Login (The "Magic" Step)
+To avoid typing your password every time you click a machine:
+
+1. Generate a key on your laptop: `ssh-keygen -t ed25519` (Press Enter/Defaults).
+2. Copy the key: cat `~/.ssh/id_ed25519.pub | clip`.
+3. Log into `access.computing.clemson.edu` and run:
+> `echo "PASTE_KEY_HERE" >> ~/.ssh/authorized_keys`
+
+**Note:** Since all Clemson lab machines share the same Home Directory (your U:drive), you only have to do this once for it to work on Babbage, Newton, and Titan!
+
+There will be more details in the respective set-up guides!
+
+---
+
 ## 🤝 Contributing
 If you find a better way to route SSH or a cleaner color for the tab bar, feel free to open a Pull Request!
